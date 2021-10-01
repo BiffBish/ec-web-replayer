@@ -22,10 +22,10 @@ require('three/examples/js/pmrem/PMREMGenerator');
 require('three/examples/js/pmrem/PMREMCubeUVPacker');
 
 const DEFAULT_CAMERA = '[default]';
-const PLAYER_SIZE = 2;
-const PLAYER_MESH_SEGMENTS = 4;
-const NAME_OFFSET_Y = -7.0;
-const NAME_SCALE = 0.099;
+const PLAYER_SIZE = 0.4;
+const PLAYER_MESH_SEGMENTS = 10;
+const NAME_OFFSET_Y = -4.0;
+const NAME_SCALE = 0.049;
 const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
 // glTF texture types. `envMap` is deliberately omitted, as it's used internally
@@ -60,6 +60,7 @@ var arePlayersSpawned = false;
 var currentTimestamp = 0;
 var currentFrame = {};
 var totalPlayers = 0;
+const REALTIME_STEP = 50;  // realtime is actually 350
 var step = 1; // Frames to step
 var stepCount = 0;
 var stepping = false;
@@ -118,7 +119,7 @@ module.exports = class Viewer {
         const fov = options.preset === Preset.ASSET_GENERATOR
             ? 0.8 * 180 / Math.PI
             : 60;
-        this.defaultCamera = new THREE.PerspectiveCamera(fov, el.clientWidth / el.clientHeight, 0.01, 1000);
+        this.defaultCamera = new THREE.PerspectiveCamera(fov, el.clientWidth / el.clientHeight, 0.0000001, 1000);
         this.activeCamera = this.defaultCamera;
         this.scene.add(this.defaultCamera);
 
@@ -205,7 +206,7 @@ module.exports = class Viewer {
             stepping = true;
             stepCount = 0;
             lineReader.resume();
-        }, step * 350);
+        }, step * REALTIME_STEP);
     }
 
     pause() {
@@ -293,15 +294,17 @@ module.exports = class Viewer {
         const loader = new THREE.FBXLoader(manager);
         loader.setCrossOrigin('anonymous');
         
-        loader.load(fbxFile, (file) => {
+        loader.load(fbxFile, (object) => {
+             const clips = object.animations || [];
 
-             const scene = file;
-             const clips = file.animations || [];
-             this.setContent(scene, clips);
+             // TODO Need individual map offsets + scales
+             object.scale.set(-0.555,0.555,-0.555);
+             object.position.set(45,0,20);
+             
+             this.setContent(object, clips);
 
-             //blobURLs.forEach(URL.revokeObjectURL);
 
-             resolve(file);
+             resolve(object);
 
         });
     }
@@ -333,8 +336,8 @@ module.exports = class Viewer {
             model.position.set(player.body.position[0], player.body.position[1], player.body.position[2]);
             text.position.set(player.body.position[0], player.body.position[1]-NAME_OFFSET_Y, player.body.position[2]);
             text.scale.set(NAME_SCALE, NAME_SCALE, NAME_SCALE);
-            scene.add(model);
-            scene.add(text)
+            this.scene.add(model);
+            this.scene.add(text)
             blueTeam.set(player.userid, model);
             blueTeamNames.set(player.userid, text);
 
@@ -357,8 +360,8 @@ module.exports = class Viewer {
             model.position.set(player.body.position[0], player.body.position[1], player.body.position[2]);
             text.position.set(player.body.position[0], player.body.position[1]-NAME_OFFSET_Y, player.body.position[2]);
             text.scale.set(NAME_SCALE, NAME_SCALE, NAME_SCALE);
-            scene.add(model);
-            scene.add(text)
+            this.scene.add(model);
+            this.scene.add(text)
             orangeTeam.set(player.userid, model);
             orangeTeamNames.set(player.userid, text);
             // loader.load('assets/models/player_orange.fbx', (model) => {
@@ -396,10 +399,10 @@ module.exports = class Viewer {
 
         this.controls.reset();
 
-        object.position.x += (object.position.x - center.x);
-        object.position.y += (object.position.y - center.y);
-        object.position.z += (object.position.z - center.z);
-        this.controls.maxDistance = size * 10;
+        // object.position.x += (object.position.x - center.x);
+        // object.position.y += (object.position.y - center.y);
+        // object.position.z += (object.position.z - center.z);
+        // this.controls.maxDistance = size * 10;
         this.defaultCamera.near = size / 100;
         this.defaultCamera.far = size * 100;
         this.defaultCamera.updateProjectionMatrix();
@@ -422,6 +425,7 @@ module.exports = class Viewer {
         this.setCamera(DEFAULT_CAMERA);
 
         this.controls.saveState();
+
 
         this.scene.add(object);
         this.content = object;
