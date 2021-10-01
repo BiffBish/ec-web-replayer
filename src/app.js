@@ -75,21 +75,21 @@ class App {
         let rootFile;
         let rootPath;
         Array.from(fileMap).forEach(([path, file]) => {
-            if (file.name.match(/\.(fbx)$/)) {
+            if (file.name.match(/\.(echoreplay)$/)) {
                 rootFile = file;
                 rootPath = path.replace(file.name, '');
             }
         });
 
         if (!rootFile) {
-            this.onError('No .fbx asset found.');
+            this.onError('No .echoreplay asset found.');
         }
 
         this.view(rootFile, rootPath, fileMap);
     }
 
     /**
-     * Passes a model to the viewer, given file and resources.
+     * Passes an .echoreplay file to the viewer, given file and resources.
      * @param  {File|string} rootFile
      * @param  {string} rootPath
      * @param  {Map<string, File>} fileMap
@@ -99,13 +99,12 @@ class App {
         if (this.viewer) this.viewer.clear();
 
         const viewer = this.viewer || this.createViewer();
-
-        const fileURL = typeof rootFile === 'string'
-            ? rootFile
-            : URL.createObjectURL(rootFile);
+        console.log("rootFile: " + rootFile + " rootPath: " + rootPath +", " + fileMap)
+        const fileURL = typeof rootFile === 'string' ? rootFile : URL.createObjectURL(rootFile);
         this.showSpinner();
+
         viewer
-            .load(fileURL, rootPath, fileMap)
+            .load(fileURL, rootFile, rootPath, fileMap)
             .catch((e) => this.onError(e))
             .then(() => {
                 if (typeof rootFile === 'object') URL.revokeObjectURL(fileURL);

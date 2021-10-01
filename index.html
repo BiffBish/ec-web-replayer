@@ -2,10 +2,10 @@
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>FBX Viewer</title>
+  <title>Echo Combat Replay Viewer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="author" content="co-authored by Don McCurdy, Pavel Kuznetsov">
-  <meta name="description" content="Drag-and-drop preview tool for FBX 3D models.">
+  <meta name="author" content="Duncan Carroll">
+  <meta name="description" content="Drag-and-drop preview tool for Echo Combat Replay files.">
   <link rel="shortcut icon" href="assets/favicon.ico">
   <link rel="stylesheet" href="style.css">
   <link href="https://fonts.googleapis.com/css?family=Raleway:300,400" rel="stylesheet">
@@ -14,24 +14,20 @@
 </head>
 <body>
   <header>
-    <h1><a href="/">FBX Viewer</a></h1>
+    <h1><a href="/">Echo Combat Replay Viewer</a></h1>
     <span class="separator layout-md"> | </span>
-    <a class="item layout-md" target="_blank" href="https://github.com/mrdoob/three.js/tree/r110">
-      three.js r110
+    <a class="item layout-md" target="_blank" href="https://www.ecranked.com/">
+      ECRanked
     </a>
     <span class="separator layout-md"> | </span>
-    <a class="item layout-md" target="_blank" href="https://github.com/mrdoob/three.js/blob/r110/examples/js/loaders/GLTFLoader.js">
-      THREE.FBXLoader@r110
-    </a>
-    <span class="separator"> | </span>
-    <a class="item" target="_blank" href="https://github.com/limitlesspro/three-fbx-viewer">
+    <a class="item" target="_blank" href="https://github.com/duncancarroll/three-fbx-viewer">
       GitHub
     </a>
   </header>
   <main class="wrap">
     <div class="dropzone">
       <div class="placeholder">
-        <p>Drag FBX file or folder here</p>
+        <p>Drag .echoreplay file here or upload</p>
       </div>
       <div class="upload-btn">
         <input type="file" name="file-input[]" id="file-input" multiple="">

@@ -2,11 +2,17 @@
 URL,navigator,THREE,Stats,dat,environments,createVignetteBackground,DEFAULT_CAMERA,IS_IOS,MAP_NAMES,Preset
 */
 const THREE = window.THREE = require('three');
+import { SpriteText2D, textAlign } from 'three-text2d'
 const Stats = require('../lib/stats.min');
 const dat = require('dat.gui');
 const environments = require('../assets/environment/index');
 const createVignetteBackground = require('three-vignette-background');
+const zlib = require('zlib');
+const unzipStream = require('unzip-stream');
+const createReadStream = require('filereader-stream');
+const readline = require('readline-browser');
 
+// TODO Don't need most of these...
 require('three/examples/js/loaders/FBXLoader');
 require('three/examples/js/loaders/DDSLoader');
 require('three/examples/js/controls/OrbitControls');
@@ -16,7 +22,10 @@ require('three/examples/js/pmrem/PMREMGenerator');
 require('three/examples/js/pmrem/PMREMCubeUVPacker');
 
 const DEFAULT_CAMERA = '[default]';
-
+const PLAYER_SIZE = 2;
+const PLAYER_MESH_SEGMENTS = 4;
+const NAME_OFFSET_Y = -7.0;
+const NAME_SCALE = 0.099;
 const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
 // glTF texture types. `envMap` is deliberately omitted, as it's used internally
@@ -31,7 +40,36 @@ const MAP_NAMES = [
     'roughnessMap',
     'specularMap',
 ];
+
+const EC_MAPS = {
+    'mpl_combat_gauss': 'assets/models/maps/surge_minimap.fbx',
+    'mpl_combat_fission': 'assets/models/maps/fission_minimap.fbx',
+    'mpl_combat_dyson': 'assets/models/maps/dyson_minimap.fbx',
+    'mpl_combat_combustion': 'assets/models/maps/combustion_minimap.fbx',
+}
+
 const Preset = {ASSET_GENERATOR: 'assetgenerator'};
+
+//var gunzip = zlib.createUnzip();
+var unzip = unzipStream.Parse();
+var rootFile = "";
+var lineReader;
+var isMapLoading = false;
+var isMapLoaded = false;
+var arePlayersSpawned = false;
+var currentTimestamp = 0;
+var currentFrame = {};
+var totalPlayers = 0;
+var step = 1; // Frames to step
+var stepCount = 0;
+var stepping = false;
+var interval;
+
+var blueTeam = new Map();
+var orangeTeam = new Map();
+
+var blueTeamNames = new Map();
+var orangeTeamNames = new Map();
 
 module.exports = class Viewer {
 
@@ -154,56 +192,194 @@ module.exports = class Viewer {
 
     }
 
-    load(url, rootPath, assetMap) {
+    stepForward() {
+        // console.log("stepped forward");
+        // stepping = true;
+        // stepCount = 0;
+        // lineReader.resume();
+    }
 
-        const baseURL = THREE.LoaderUtils.extractUrlBase(url);
+    play() {
+        console.log("pressed play");   
+         interval = setInterval(function() {
+            stepping = true;
+            stepCount = 0;
+            lineReader.resume();
+        }, step * 350);
+    }
 
-        // Load.
-        return new Promise((resolve, reject) => {
-            const manager = new THREE.LoadingManager();
-            const blobURLs = [];
+    pause() {
+        console.log("pressed pause");
+        clearInterval(interval);
+        stepping = false;
+        lineReader.pause();
+    }
 
-            manager.onError = (url) => {
-                const message = 'Error loading url: ' + url;
-                alert(message);
-                console.error('[FBX Viewer] ' + message);
-            };
+    stepBackward() {
+        console.log("stepped backwards");
+    }
 
-            // Intercept and override relative URLs.
-            manager.setURLModifier((url, path) => {
+    rewindToBeginning() {
+        console.log("rewindToBeginning");
+        lineReader.close();
 
-                const normalizedURL = rootPath + url
-                    .replace(baseURL, '')
-                    .replace(/^(\.?\/)/, '');
-
-                if (assetMap.has(normalizedURL)) {
-                    const blob = assetMap.get(normalizedURL);
-                    const blobURL = URL.createObjectURL(blob);
-                    blobURLs.push(blobURL);
-                    return blobURL;
-                }
-
-                return (path || '') + url;
-
+        createReadStream(rootFile, {start: 0 }).pipe(unzip).on('entry', (entry) => {
+            lineReader = readline.createInterface({
+                input: entry
             });
-
-            const loader = new THREE.FBXLoader(manager);
-            loader.setCrossOrigin('anonymous');
-            
-            loader.load(url, (file) => {
-
-                const scene = file;
-                const clips = file.animations || [];
-                this.setContent(scene, clips);
-
-                blobURLs.forEach(URL.revokeObjectURL);
-
-                resolve(file);
-
-            }, undefined, reject);
-
+            lineReader.pause();
         });
 
+        // lineReader = readline.createInterface({
+        //       input: createReadStream(rootFile, {start: 0 }).pipe(unzip).on()
+        // });
+        
+    }
+
+    load(url, rootFile, rootPath, assetMap) {
+        this.rootFile = rootFile;
+        console.log("Reading file: " + rootFile + " rootPath: " + rootPath + " assetMap: " + assetMap);
+        // Load
+        return new Promise((resolve, reject) => {
+            // Unzip the first file as a stream and pass it to lineReader
+            createReadStream(rootFile, {start: 0 }).pipe(unzip).on('entry', (entry) => {
+                lineReader = readline.createInterface({
+                    input: entry
+                });
+
+                console.log("Waiting for data from stream");
+                lineReader.on('line', (line) => {
+                const timestamp = line.substring(0, line.indexOf("\t"));
+                currentFrame = JSON.parse(line.substring(line.indexOf("\t"), line.length));
+                console.log("Timestamp: " + timestamp);
+                if (!isMapLoaded && !isMapLoading) {
+                    isMapLoading = true;
+
+                    // TODO Handle players joining in the middle
+                    totalPlayers = currentFrame.teams[0].players.length + currentFrame.teams[1].players.length;
+                    this.loadMap(EC_MAPS[currentFrame.map_name]);
+                    lineReader.pause();
+                } else if (isMapLoaded) {
+                    this.updatePlayerPositions();
+                    if (stepping) {
+                        if (stepCount == step) {
+                            stepping = false;
+                            lineReader.pause();
+                        }
+                        stepCount += 1;
+                    }
+                }
+             });
+            });
+            
+             
+            });
+    }
+
+    loadMap(fbxFile) {
+        const manager = new THREE.LoadingManager();
+        const blobURLs = [];
+
+        manager.onLoad = () => {
+            console.log("Loaded map");
+            this.spawnPlayers();
+        }
+
+        manager.onError = (url) => {
+             const message = 'Error loading map: ' + fbxFile;
+             console.error('[Echo Combat Viewer] ' + message);
+        };
+
+        const loader = new THREE.FBXLoader(manager);
+        loader.setCrossOrigin('anonymous');
+        
+        loader.load(fbxFile, (file) => {
+
+             const scene = file;
+             const clips = file.animations || [];
+             this.setContent(scene, clips);
+
+             //blobURLs.forEach(URL.revokeObjectURL);
+
+             resolve(file);
+
+        });
+    }
+
+    spawnPlayers() {
+        // const manager = new THREE.LoadingManager();
+        // const loader = new THREE.FBXLoader(manager);
+        // var playersSpawned = 0;
+
+        // manager.onLoad = () => {
+        //     playersSpawned += 1;
+        //     if (playersSpawned == totalPlayers) {
+        //         isMapLoaded = true;
+        //         console.log("All players loaded!");
+        //     }
+        // }
+
+        // manager.onError = (url) => {
+        //      const message = 'Error loading player: ' + url;
+        //      console.error('[Echo Combat Viewer] ' + message);
+        // };
+
+        // Blue team
+        currentFrame.teams[0].players.forEach((player) => {
+            const geometry = new THREE.SphereGeometry(PLAYER_SIZE, PLAYER_MESH_SEGMENTS, PLAYER_MESH_SEGMENTS);
+            const material = new THREE.MeshBasicMaterial({ color: 0x0058cc });
+            const model = new THREE.Mesh(geometry, material);
+            const text = new SpriteText2D(player.name, { align: textAlign.center, font: '40px Arial', fillStyle: '#0058cc', antialias: false  })
+            model.position.set(player.body.position[0], player.body.position[1], player.body.position[2]);
+            text.position.set(player.body.position[0], player.body.position[1]-NAME_OFFSET_Y, player.body.position[2]);
+            text.scale.set(NAME_SCALE, NAME_SCALE, NAME_SCALE);
+            scene.add(model);
+            scene.add(text)
+            blueTeam.set(player.userid, model);
+            blueTeamNames.set(player.userid, text);
+
+            // Parent text to model
+
+
+            // loader.load('assets/models/player_blue.fbx', (model) => {
+            //     this.scene.add(model);
+            //     player.set("model", model);
+            // });
+        });
+
+
+        // Orange team
+        currentFrame.teams[1].players.forEach((player) => {
+            const geometry = new THREE.SphereGeometry(PLAYER_SIZE, PLAYER_MESH_SEGMENTS, PLAYER_MESH_SEGMENTS);
+            const material = new THREE.MeshBasicMaterial({ color: 0xeb5e34 });
+            const model = new THREE.Mesh(geometry, material);
+            const text = new SpriteText2D(player.name, { align: textAlign.center, font: '40px Arial', fillStyle: '#eb5e34', antialias: false  })
+            model.position.set(player.body.position[0], player.body.position[1], player.body.position[2]);
+            text.position.set(player.body.position[0], player.body.position[1]-NAME_OFFSET_Y, player.body.position[2]);
+            text.scale.set(NAME_SCALE, NAME_SCALE, NAME_SCALE);
+            scene.add(model);
+            scene.add(text)
+            orangeTeam.set(player.userid, model);
+            orangeTeamNames.set(player.userid, text);
+            // loader.load('assets/models/player_orange.fbx', (model) => {
+            //     this.scene.add(model);
+            //     player.set("model", model);
+            // });
+        });
+
+        isMapLoaded = true;
+    }
+
+    updatePlayerPositions() {
+        //console.log("Updating player positions");
+        currentFrame.teams[0].players.forEach((player) => {
+            blueTeam.get(player.userid).position.set(player.body.position[0], player.body.position[1], player.body.position[2]);
+            blueTeamNames.get(player.userid).position.set(player.body.position[0], player.body.position[1]-NAME_OFFSET_Y, player.body.position[2]);
+        });
+        currentFrame.teams[1].players.forEach((player) => {
+            orangeTeam.get(player.userid).position.set(player.body.position[0], player.body.position[1], player.body.position[2]);
+            orangeTeamNames.get(player.userid).position.set(player.body.position[0], player.body.position[1]-NAME_OFFSET_Y, player.body.position[2]);
+        });
     }
 
     /**
@@ -501,7 +677,16 @@ module.exports = class Viewer {
 
         const gui = this.gui = new dat.GUI({autoPlace: false, width: 260, hideable: true});
 
+        // Playback controls
+        const playbackFolder = gui.addFolder('Playback');
+        const playButton = playbackFolder.add(this, "play");
+        const pauseButton = playbackFolder.add(this, "pause");
+        const stepBackward = playbackFolder.add(this, "stepBackward");
+        const stepForward = playbackFolder.add(this, "stepForward");
+        const rewindToBeginning = playbackFolder.add(this, "rewindToBeginning");
+
         // Display controls.
+        
         const dispFolder = gui.addFolder('Display');
         const envBackgroundCtrl = dispFolder.add(this.state, 'background');
         envBackgroundCtrl.onChange(() => this.updateEnvironment());
