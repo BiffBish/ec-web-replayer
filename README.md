@@ -1,10 +1,5 @@
-# three-fbx-viewer
-Drag-and-drop preview for FBX models in WebGL using three.js.
-
-Demo https://limitless.pro/three-fbx-viewer
-
-![screenshot](https://limitless.pro/storage/7/responsive-images/three-fbx-viewer___medialibrary_original_1365_529.jpg)
-## Quickstart
+# ec-web-replayer
+React-based, three.js streaming web-based viewer app for Echo Combat replay files.
 
 ### Web
 
