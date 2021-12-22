@@ -11,6 +11,7 @@ const zlib = require('zlib');
 const unzipStream = require('unzip-stream');
 const createReadStream = require('filereader-stream');
 const readline = require('readline-browser');
+const { Slider, Direction, Button, PlayerIcon, FormattedTime } = require('react-player-controls')
 
 // TODO Don't need most of these...
 require('three/examples/js/loaders/FBXLoader');
@@ -302,7 +303,6 @@ module.exports = class Viewer {
              object.position.set(45,0,20);
              
              this.setContent(object, clips);
-
 
              resolve(object);
 
