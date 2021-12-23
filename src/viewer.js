@@ -51,7 +51,7 @@ const EC_MAPS = {
             'x': 21.8, 'y': -1.37, 'z': 45.7
             },
             "rotation": {
-                'x': 0, 'y': -90, 'z': 0
+                'x': 0, 'y': 0, 'z': 0
             },
             "scale": {
                 'x': 0.56, 'y': 0.56, 'z': 0.56
@@ -68,7 +68,7 @@ const EC_MAPS = {
                 'x': -0.5, 'y': -12.43, 'z': 21
             },
             "rotation": {
-                'x': 0, 'y': -90, 'z': 0
+                'x': 0, 'y': 0, 'z': 0
             },
             "scale": {
                 'x': 0.588, 'y': 0.588, 'z': 0.588
@@ -84,7 +84,7 @@ const EC_MAPS = {
                 'x': 0, 'y': -3.95, 'z': 0
             },
             "rotation": {
-                'x': 0, 'y': -90, 'z': 0
+                'x': 0, 'y': 0, 'z': 0
             },
             "scale": {
                 'x': 0.92377, 'y': 0.92377, 'z': 0.92377
@@ -100,10 +100,10 @@ const EC_MAPS = {
                 'x': 0, 'y': -83.3, 'z': 26.2
             },
             "rotation": {
-                'x': 0, 'y': 180, 'z': 0
+                'x': 0, 'y': 80, 'z': 0
             },
             "scale": {
-                'x': 0.588, 'y': 0.588, 'z': 0.588
+                'x': -0.588, 'y': 0.588, 'z': -0.588
             } 
         }
     }
@@ -366,7 +366,7 @@ module.exports = class Viewer {
             // Each map has specific offset from game data
             map.position.set(ecMap.offset.position.z, ecMap.offset.position.y, ecMap.offset.position.x);
             map.scale.set(-ecMap.offset.scale.x, ecMap.offset.scale.y, -ecMap.offset.scale.z);
-            
+            map.rotation.set(ecMap.offset.rotation.x, ecMap.offset.rotation.y, ecMap.offset.rotation.z);
              // Original Surge scale + position:
              // map.scale.set(-0.555,0.555,-0.555);
              // map.position.set(45,0,20);
