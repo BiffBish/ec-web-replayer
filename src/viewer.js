@@ -115,13 +115,12 @@ const Preset = {ASSET_GENERATOR: 'assetgenerator'};
 var unzip = unzipStream.Parse();
 var rootFile = "";
 var lineReader;
-var isMapLoading = false;
 var isMapLoaded = false;
-var arePlayersSpawned = false;
 var currentTimestamp = 0;
 var currentFrame = {};
 var totalPlayers = 0;
-const REALTIME_STEP = 50;  // realtime is actually 350
+var lastTotalPlayers = 0;   // Last frame player count
+const REALTIME_STEP = 25;  // realtime is actually 350
 var step = 1; // Frames to step
 var stepCount = 0;
 var stepping = false;
@@ -313,16 +312,23 @@ module.exports = class Viewer {
                 lineReader.on('line', (line) => {
                 const timestamp = line.substring(0, line.indexOf("\t"));
                 currentFrame = JSON.parse(line.substring(line.indexOf("\t"), line.length));
-                console.log("Timestamp: " + timestamp);
-                if (!isMapLoaded && !isMapLoading) {
-                    isMapLoading = true;
-
-                    // TODO Handle players joining in the middle
-                    totalPlayers = currentFrame.teams[0].players.length + currentFrame.teams[1].players.length;
+                //console.log("Timestamp: " + timestamp);
+                //console.log("Current frame: " + JSON.stringify(currentFrame));
+                if (!isMapLoaded) {
+                    isMapLoaded = true;
+                    totalPlayers = this.countPlayers(currentFrame.teams);
                     this.loadMap(EC_MAPS[currentFrame.map_name]);
                     lineReader.pause();
-                } else if (isMapLoaded) {
-                    this.updatePlayerPositions();
+                } else {
+                    totalPlayers = this.countPlayers(currentFrame.teams);
+                    if (totalPlayers > 0 && totalPlayers != lastTotalPlayers) {
+                        this.spawnPlayers();
+                    } else if (totalPlayers > 0) {
+                        this.updatePlayerPositions();
+                    }
+                    
+                    lastTotalPlayers = totalPlayers;
+                    
                     if (stepping) {
                         if (stepCount == step) {
                             stepping = false;
@@ -344,7 +350,6 @@ module.exports = class Viewer {
 
         manager.onLoad = () => {
             console.log("Loaded map: " + ecMap.name);
-            this.spawnPlayers();
         }
 
         manager.onError = (url) => {
@@ -362,8 +367,6 @@ module.exports = class Viewer {
             map.position.set(ecMap.offset.position.z, ecMap.offset.position.y, ecMap.offset.position.x);
             map.scale.set(-ecMap.offset.scale.x, ecMap.offset.scale.y, -ecMap.offset.scale.z);
             
-            //map.rotation.set(ecMap.offset.rotation.x, ecMap.offset.rotation.y, ecMap.offset.rotation.z);
-
              // Original Surge scale + position:
              // map.scale.set(-0.555,0.555,-0.555);
              // map.position.set(45,0,20);
@@ -376,7 +379,16 @@ module.exports = class Viewer {
         });
     }
 
+    countPlayers(teams) {
+        if (!teams[0].hasOwnProperty('players') || !teams[1].hasOwnProperty('players')) {
+            console.log("Error: No players!");
+            return 0;
+        }
+        return teams[0].players.length + teams[1].players.length;
+    }
+
     spawnPlayers() {
+        console.log("Spawning new players");
         // const manager = new THREE.LoadingManager();
         // const loader = new THREE.FBXLoader(manager);
         // var playersSpawned = 0;
@@ -396,6 +408,11 @@ module.exports = class Viewer {
 
         // Blue team
         currentFrame.teams[0].players.forEach((player) => {
+            // Only add players we have no record of
+            if (blueTeam.has(player.userid)) {
+                return;
+            }
+            console.log("Adding BLUE TEAM player: " + player.name);
             const geometry = new THREE.SphereGeometry(PLAYER_SIZE, PLAYER_MESH_SEGMENTS, PLAYER_MESH_SEGMENTS);
             const material = new THREE.MeshBasicMaterial({ color: 0x0058cc });
             const model = new THREE.Mesh(geometry, material);
@@ -408,9 +425,6 @@ module.exports = class Viewer {
             blueTeam.set(player.userid, model);
             blueTeamNames.set(player.userid, text);
 
-            // Parent text to model
-
-
             // loader.load('assets/models/player_blue.fbx', (model) => {
             //     this.scene.add(model);
             //     player.set("model", model);
@@ -420,6 +434,11 @@ module.exports = class Viewer {
 
         // Orange team
         currentFrame.teams[1].players.forEach((player) => {
+            // Only add players we have no record of
+            if (orangeTeam.has(player.userid)) {
+                return;
+            }
+            console.log("Adding ORANGE TEAM player: " + player.name);
             const geometry = new THREE.SphereGeometry(PLAYER_SIZE, PLAYER_MESH_SEGMENTS, PLAYER_MESH_SEGMENTS);
             const material = new THREE.MeshBasicMaterial({ color: 0xeb5e34 });
             const model = new THREE.Mesh(geometry, material);
@@ -437,7 +456,7 @@ module.exports = class Viewer {
             // });
         });
 
-        isMapLoaded = true;
+        //console.log("Blue team: " + currentFrame.teams[0].players.length + ", Orange team: " + currentFrame.teams[1].players.length);
     }
 
     updatePlayerPositions() {
@@ -514,7 +533,7 @@ module.exports = class Viewer {
         this.options.spinner.style.display = 'none'
         window.scene = this.content;
         console.info('[FBX Viewer] THREE.Scene exported as `window.scene`.');
-        this.printGraph(this.content);
+        //this.printGraph(this.content);
 
     }
 
