@@ -26,7 +26,7 @@ const DEFAULT_CAMERA = '[default]';
 const PLAYER_SIZE = 0.4;
 const PLAYER_MESH_SEGMENTS = 10;
 const NAME_OFFSET_Y = -4.0;
-const NAME_SCALE = 0.049;
+const NAME_SCALE = 0.0475;
 const IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
 // glTF texture types. `envMap` is deliberately omitted, as it's used internally
@@ -190,6 +190,7 @@ module.exports = class Viewer {
         this.renderer.setClearColor(0xcccccc);
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.renderer.setSize(el.clientWidth, el.clientHeight);
+        this.renderer.localClippingEnabled = true;
 
         this.controls = new THREE.OrbitControls(this.defaultCamera, this.renderer.domElement);
         this.controls.autoRotate = false;
@@ -388,7 +389,7 @@ module.exports = class Viewer {
     }
 
     spawnPlayers() {
-        console.log("Spawning new players");
+        //console.log("Spawning new players");
         // const manager = new THREE.LoadingManager();
         // const loader = new THREE.FBXLoader(manager);
         // var playersSpawned = 0;
@@ -420,6 +421,8 @@ module.exports = class Viewer {
             model.position.set(player.body.position[0], player.body.position[1], player.body.position[2]);
             text.position.set(player.body.position[0], player.body.position[1]-NAME_OFFSET_Y, player.body.position[2]);
             text.scale.set(NAME_SCALE, NAME_SCALE, NAME_SCALE);
+            //model.frustumCulled = false;
+            //text.frustumCulled = false;
             this.scene.add(model);
             this.scene.add(text)
             blueTeam.set(player.userid, model);
@@ -446,6 +449,8 @@ module.exports = class Viewer {
             model.position.set(player.body.position[0], player.body.position[1], player.body.position[2]);
             text.position.set(player.body.position[0], player.body.position[1]-NAME_OFFSET_Y, player.body.position[2]);
             text.scale.set(NAME_SCALE, NAME_SCALE, NAME_SCALE);
+            //model.frustumCulled = false;
+            //text.frustumCulled = false;
             this.scene.add(model);
             this.scene.add(text)
             orangeTeam.set(player.userid, model);
@@ -489,7 +494,7 @@ module.exports = class Viewer {
         // object.position.y += (object.position.y - center.y);
         // object.position.z += (object.position.z - center.z);
         // this.controls.maxDistance = size * 10;
-        this.defaultCamera.near = size / 100;
+        this.defaultCamera.near = size / 10000;
         this.defaultCamera.far = size * 100;
         this.defaultCamera.updateProjectionMatrix();
 
@@ -512,7 +517,12 @@ module.exports = class Viewer {
 
         this.controls.saveState();
 
-
+        // disable frustrum culling on all objects:
+        // object.frustumCulled = false;
+        // object.traverse(function(obj) {
+        //     obj.frustumCulled = false;
+        // });
+        
         this.scene.add(object);
         this.content = object;
 
