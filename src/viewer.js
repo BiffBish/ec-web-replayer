@@ -11,7 +11,7 @@ const zlib = require('zlib');
 const unzipStream = require('unzip-stream');
 const createReadStream = require('filereader-stream');
 const readline = require('readline-browser');
-const { Slider, Direction, Button, PlayerIcon, FormattedTime } = require('react-player-controls')
+
 
 // TODO Don't need most of these...
 require('three/examples/js/loaders/FBXLoader');
@@ -125,6 +125,7 @@ var step = 1; // Frames to step
 var stepCount = 0;
 var stepping = false;
 var interval;
+var playback = null;
 
 var blueTeam = new Map();
 var orangeTeam = new Map();
@@ -134,10 +135,11 @@ var orangeTeamNames = new Map();
 
 module.exports = class Viewer {
 
-    constructor(el, options) {
+    constructor(el, _playback, options) {
         this.el = el;
         this.options = options;
-
+        playback = _playback;
+        playback.setViewer(this);
         this.lights = [];
         this.content = null;
         this.mixer = null;
@@ -145,9 +147,7 @@ module.exports = class Viewer {
         this.gui = null;
 
         this.state = {
-            environment: options.preset === Preset.ASSET_GENERATOR
-                ? 'Footprint Court (HDR)'
-                : environments[1].name,
+            environment: options.preset === Preset.ASSET_GENERATOR ? 'Footprint Court (HDR)' : environments[1].name,
             background: false,
             playbackSpeed: 1.0,
             actionStates: {},
@@ -291,10 +291,6 @@ module.exports = class Viewer {
             });
             lineReader.pause();
         });
-
-        // lineReader = readline.createInterface({
-        //       input: createReadStream(rootFile, {start: 0 }).pipe(unzip).on()
-        // });
         
     }
 
@@ -313,12 +309,13 @@ module.exports = class Viewer {
                 lineReader.on('line', (line) => {
                 const timestamp = line.substring(0, line.indexOf("\t"));
                 currentFrame = JSON.parse(line.substring(line.indexOf("\t"), line.length));
+                playback.updateTitle(EC_MAPS[currentFrame.map_name].name + ": " + timestamp.split(".")[0]);
                 //console.log("Timestamp: " + timestamp);
                 //console.log("Current frame: " + JSON.stringify(currentFrame));
                 if (!isMapLoaded) {
                     isMapLoaded = true;
                     totalPlayers = this.countPlayers(currentFrame.teams);
-                    this.loadMap(EC_MAPS[currentFrame.map_name]);
+                    this.loadMap(EC_MAPS[currentFrame.map_name], timestamp);
                     lineReader.pause();
                 } else {
                     totalPlayers = this.countPlayers(currentFrame.teams);
@@ -345,7 +342,7 @@ module.exports = class Viewer {
             });
     }
 
-    loadMap(ecMap) {
+    loadMap(ecMap, timestamp) {
         const manager = new THREE.LoadingManager();
         const blobURLs = [];
 
@@ -373,10 +370,12 @@ module.exports = class Viewer {
              // map.position.set(45,0,20);
 
              
-             this.setContent(map, clips);
-
-             resolve(map);
-
+             
+            this.setContent(map, clips);
+            playback.loadSong(ecMap.name, timestamp.split(".")[0]);
+            playback.updateProgress(1,1000);
+            // This errors out for some reason...
+             //resolve(map);
         });
     }
 
@@ -386,6 +385,14 @@ module.exports = class Viewer {
             return 0;
         }
         return teams[0].players.length + teams[1].players.length;
+    }
+
+    setProgress(progress) {
+        // TODO seek
+    }
+
+    getDuration() {
+        return 1000;
     }
 
     spawnPlayers() {
@@ -413,7 +420,7 @@ module.exports = class Viewer {
             if (blueTeam.has(player.userid)) {
                 return;
             }
-            console.log("Adding BLUE TEAM player: " + player.name);
+            console.log(player.name + " joined BLUE TEAM");
             const geometry = new THREE.SphereGeometry(PLAYER_SIZE, PLAYER_MESH_SEGMENTS, PLAYER_MESH_SEGMENTS);
             const material = new THREE.MeshBasicMaterial({ color: 0x0058cc });
             const model = new THREE.Mesh(geometry, material);
@@ -441,7 +448,7 @@ module.exports = class Viewer {
             if (orangeTeam.has(player.userid)) {
                 return;
             }
-            console.log("Adding ORANGE TEAM player: " + player.name);
+            console.log(player.name + " joined ORANGE TEAM");
             const geometry = new THREE.SphereGeometry(PLAYER_SIZE, PLAYER_MESH_SEGMENTS, PLAYER_MESH_SEGMENTS);
             const material = new THREE.MeshBasicMaterial({ color: 0xeb5e34 });
             const model = new THREE.Mesh(geometry, material);

@@ -9,6 +9,7 @@
   <link rel="shortcut icon" href="assets/favicon.ico">
   <link rel="stylesheet" href="style.css">
   <link href="https://fonts.googleapis.com/css?family=Raleway:300,400" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <script src="lib/inflate.min.js"></script>
   <script src="bundle.js?v=r110"></script>
 </head>
@@ -39,4 +40,24 @@
     </div>
     <div class="spinner"></div>
   </main>
+  <div class="audio-container hide" id="audio-container">
+    <div class="audio-info">
+        <h3 id="title"></h3>
+        <div class="progress-container" id="progress-container">
+            <div class="progress" id="progress"></div>
+        </div>
+    </div>
+    <div class="navigation">
+        <button id="prev" class="action-btn">
+            <i class="fas fa-backward"></i>
+        </button>
+        <button id="play" class="action-btn action-btn-big">
+            <i class="fas fa-play"></i>
+        </button>
+        <button id="next" class="action-btn">
+            <i class="fas fa-forward"></i>
+        </button>
+
+    </div>
+  </div>
 </body>

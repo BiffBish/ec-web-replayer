@@ -54,6 +54,111 @@ body {
     top: 0;
 }
 
+
+/******
+ * 
+ * Playback control
+ * 
+ * */
+
+
+.hide {
+    display:  none;
+}
+
+.audio-container{
+    border-radius: 15px;
+    padding: 20px 30px;
+    margin: 0px auto;
+    z-index: 10;
+    position:absolute;
+    width: 100%;
+    top: 86%;
+}
+
+  .audio-container.play img {
+    animation-play-state: running;
+  }
+
+  @keyframes rotate {
+    from {
+      transform: rotate(0deg);
+    }
+  
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .navigation {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+  }
+  
+  .action-btn {
+    
+    color: #000;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 10px;
+    margin: 0 20px;
+  }
+
+
+  .action-btn.action-btn-big {
+    color: #000;
+    font-size: 30px;
+  }
+
+  .action-btn:focus {
+    outline: 0;
+  }
+
+  .audio-info {
+    /*background-color: rgb(255, 255, 255);*/
+    padding: 10px;
+    width: 80%;
+    z-index: 0;
+    margin: 20px auto;
+  }
+  
+  .audio-container.play .audio-info {
+    opacity: 1;
+  }
+  
+  .audio-info h3 {
+    text-align: center;
+    margin: 0;
+  }
+  
+  .progress-container {
+    background: #ddd;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 10px 0;
+    height: 4px;
+    width: 100%;
+  }
+  
+  .progress {
+    background-color: #000;
+    border-radius: 5px;
+    height: 100%;
+    width: 50%;
+    transition: width 0.1s linear;
+  }
+
+
+
+
+
+
+
+
+
+
 /******************************************************************************
  * Header
  */

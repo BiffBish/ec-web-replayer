@@ -1,5 +1,6 @@
 const WEBGL = require('../lib/WebGL');
 const Viewer = require('./viewer');
+const Playback = require('./playback_controls');
 const SimpleDropzone = require('simple-dropzone');
 const queryString = require('query-string');
 
@@ -8,6 +9,9 @@ if (!(window.File && window.FileReader && window.FileList && window.Blob)) {
 } else if (!WEBGL.isWebGLAvailable()) {
     console.error('WebGL is not supported in this browser.');
 }
+
+
+let playback = null;
 
 class App {
 
@@ -63,7 +67,8 @@ class App {
         this.viewerEl.classList.add('viewer');
         this.dropEl.innerHTML = '';
         this.dropEl.appendChild(this.viewerEl);
-        this.viewer = new Viewer(this.viewerEl, this.options);
+        playback = new Playback(document);
+        this.viewer = new Viewer(this.viewerEl, playback, this.options);
         return this.viewer;
     }
 
@@ -139,5 +144,12 @@ class App {
 document.addEventListener('DOMContentLoaded', () => {
 
     const app = new App(document.body, location);
+
+    // Spacebar toggles playback
+    document.body.onkeyup = function(e){
+        if(e.keyCode === 32 || e.key === ' ' || e.key === 'Spacebar'){
+            playback.toggle();
+        }
+    }
 
 });
