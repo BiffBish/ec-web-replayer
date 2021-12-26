@@ -3,17 +3,11 @@
   "productName": "FBX Viewer",
   "version": "1.0.0",
   "description": "Preview FBX models using three.js and a drag-and-drop interface.",
-  "main": "electron/main.js",
+  "main": "src/app.js",
   "browser": "src/app.js",
   "scripts": {
-    "start": "electron .",
-    "build": "browserify src/app.js -o bundle.js",
-    "package": "npm run package:windows && npm run package:mac && npm run package:linux",
-    "package:windows": "electron-packager . fbx-viewer --overwrite --asar --platform=win32 --arch=ia32 --icon=assets/icons/fbx-Viewer.ico --out=dist --version-string.CompanyName=CE --version-string.FileDescription=CE --version-string.ProductName=\"fbx Viewer\"",
-    "package:mac": "electron-packager . --overwrite --platform=darwin --arch=x64 --icon=assets/icons/fbx-Viewer.icns --out=dist",
-    "package:linux": "electron-packager . fbx-viewer --overwrite --asar --platform=linux --arch=x64 --icon=assets/icons/fbx-Viewer.png --out=dist",
+    "build": "browserify -p esmify src/app.js -o bundle.js",
     "dev": "budo src/app.js:bundle.js --port 3000 -- -p esmify",
-    "dev:electron": "concurrently \"watchify src/app.js -o bundle.js\" \"npm start\"",
     "test": "node scripts/gen_test.js",
     "deploy": "npm run build && now --prod && npm run clean",
     "clean": "rm bundle.js",
@@ -28,12 +22,13 @@
     "modeling",
     "webgl"
   ],
-  "author": "Don McCurdy <dm@donmccurdy.com> (https://www.donmccurdy.com)",
+  "author": "dc",
   "contributors": [
-    "Pavel Kuznetsov <i@limitless.pro> (https://limitless.pro)"
+    "lorem ipsum"
   ],
   "license": "MIT",
   "dependencies": {
+    "browserify": "^16.5.2",
     "dat.gui": "^0.7.6",
     "filereader-stream": "^2.0.0",
     "glob-to-regexp": "^0.4.1",
@@ -50,12 +45,9 @@
     "zlib": "^1.0.5"
   },
   "devDependencies": {
-    "browserify": "^16.5.0",
     "budo": "^11.6.3",
     "chalk": "^2.4.2",
     "concurrently": "^3.6.1",
-    "electron": "^3.1.13",
-    "electron-packager": "^12.2.0",
     "esmify": "^2.1.1",
     "glslify": "^6.4.1",
     "node-fetch": "^1.7.3",
