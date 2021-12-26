@@ -6,8 +6,8 @@
   "main": "src/app.js",
   "browser": "src/app.js",
   "scripts": {
-    "build": "browserify -p esmify src/app.js -o bundle.js",
-    "dev": "budo src/app.js:bundle.js --port 3000 -- -p esmify",
+    "build": "browserify -p esmify src/app.js -o build/bundle.js",
+    "dev": "budo src/app.js:build/bundle.js --port 3000 -- -p esmify",
     "test": "node scripts/gen_test.js",
     "deploy": "npm run build && now --prod && npm run clean",
     "clean": "rm bundle.js",
