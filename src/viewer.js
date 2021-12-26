@@ -113,6 +113,7 @@ const Preset = {ASSET_GENERATOR: 'assetgenerator'};
 
 //var gunzip = zlib.createUnzip();
 var unzip = unzipStream.Parse();
+var readStream;
 var rootFile = "";
 var lineReader;
 var isMapLoaded = false;
@@ -120,7 +121,8 @@ var currentTimestamp = 0;
 var currentFrame = {};
 var totalPlayers = 0;
 var lastTotalPlayers = 0;   // Last frame player count
-const REALTIME_STEP = 25;  // realtime is actually 350
+const REALTIME_STEP = 200;  // realtime
+var currentStep = REALTIME_STEP;
 var step = 1; // Frames to step
 var stepCount = 0;
 var stepping = false;
@@ -255,10 +257,18 @@ module.exports = class Viewer {
     }
 
     stepForward() {
-        // console.log("stepped forward");
         // stepping = true;
         // stepCount = 0;
         // lineReader.resume();
+        if (playback.isPaused()) {
+            // step backward
+        } else {
+            currentStep = parseInt(currentStep / 2);    
+            this.pause();
+            this.play();         
+        }
+
+        console.log("stepped forward");
     }
 
     play() {
@@ -267,7 +277,7 @@ module.exports = class Viewer {
             stepping = true;
             stepCount = 0;
             lineReader.resume();
-        }, step * REALTIME_STEP);
+        }, step * currentStep);
     }
 
     pause() {
@@ -278,19 +288,32 @@ module.exports = class Viewer {
     }
 
     stepBackward() {
-        console.log("stepped backwards");
+        if (playback.isPaused()) {
+            this.rewindToBeginning();
+        } else {
+            currentStep = parseInt(currentStep * 2);             
+            this.pause();
+            this.play();
+            console.log("stepped backwards");
+        }
     }
 
     rewindToBeginning() {
         console.log("rewindToBeginning");
-        lineReader.close();
+        // Doesn't work at all...
+        //readStream.unpipe(unzip);
+        //readStream.destroy();
+        // lineReader.close();
+        // readStream = createReadStream(this.rootFile, {start: 0 }).pipe(unzip).on('entry', (entry) => {
+        //         lineReader = readline.createInterface({
+        //             input: entry
+        //         });
 
-        createReadStream(rootFile, {start: 0 }).pipe(unzip).on('entry', (entry) => {
-            lineReader = readline.createInterface({
-                input: entry
-            });
-            lineReader.pause();
-        });
+        //         console.log("Waiting for data from stream");
+        //         lineReader.on('line', (line) => {
+        //             this.onLineRead(line);
+        //         });
+        //     });
         
     }
 
@@ -300,46 +323,49 @@ module.exports = class Viewer {
         // Load
         return new Promise((resolve, reject) => {
             // Unzip the first file as a stream and pass it to lineReader
-            createReadStream(rootFile, {start: 0 }).pipe(unzip).on('entry', (entry) => {
+            readStream = createReadStream(rootFile, {start: 0 }).pipe(unzip).on('entry', (entry) => {
                 lineReader = readline.createInterface({
                     input: entry
                 });
 
                 console.log("Waiting for data from stream");
                 lineReader.on('line', (line) => {
-                const timestamp = line.substring(0, line.indexOf("\t"));
-                currentFrame = JSON.parse(line.substring(line.indexOf("\t"), line.length));
-                playback.updateTitle(EC_MAPS[currentFrame.map_name].name + ": " + timestamp.split(".")[0]);
-                //console.log("Timestamp: " + timestamp);
-                //console.log("Current frame: " + JSON.stringify(currentFrame));
-                if (!isMapLoaded) {
-                    isMapLoaded = true;
-                    totalPlayers = this.countPlayers(currentFrame.teams);
-                    this.loadMap(EC_MAPS[currentFrame.map_name], timestamp);
-                    lineReader.pause();
-                } else {
-                    totalPlayers = this.countPlayers(currentFrame.teams);
-                    if (totalPlayers > 0 && totalPlayers != lastTotalPlayers) {
-                        this.spawnPlayers();
-                    } else if (totalPlayers > 0) {
-                        this.updatePlayerPositions();
-                    }
-                    
-                    lastTotalPlayers = totalPlayers;
-                    
-                    if (stepping) {
-                        if (stepCount == step) {
-                            stepping = false;
-                            lineReader.pause();
-                        }
-                        stepCount += 1;
-                    }
-                }
-             });
+                    this.onLineRead(line);
+                });
             });
+        });
+    }
+
+    onLineRead(line) {
+        const timestamp = line.substring(0, line.indexOf("\t"));
+        currentFrame = JSON.parse(line.substring(line.indexOf("\t"), line.length));
+        playback.updateTitle(EC_MAPS[currentFrame.map_name].name + ": " + timestamp.split(".")[0]);
+        //console.log("Timestamp: " + timestamp);
+        
+        if (!isMapLoaded) {
+            isMapLoaded = true;
+            console.log("First frame: " + JSON.stringify(currentFrame));
+            totalPlayers = this.countPlayers(currentFrame.teams);
+            this.loadMap(EC_MAPS[currentFrame.map_name], timestamp);
+            lineReader.pause();
+        } else {
+            totalPlayers = this.countPlayers(currentFrame.teams);
+            if (totalPlayers > 0 && totalPlayers != lastTotalPlayers) {
+                this.spawnPlayers();
+            } else if (totalPlayers > 0) {
+                this.updatePlayerPositions();
+            }
             
-             
-            });
+            lastTotalPlayers = totalPlayers;
+            
+            if (stepping) {
+                if (stepCount == step) {
+                    stepping = false;
+                    lineReader.pause();
+                }
+                stepCount += 1;
+            }
+        }
     }
 
     loadMap(ecMap, timestamp) {

@@ -85,30 +85,18 @@ toggle() {
   }
 }
 
+isPaused() {
+  return !musicContainer.classList.contains('play');
+}
+
 // Previous song
 prevSong() {
-  songIndex--;
-
-  if (songIndex < 0) {
-    songIndex = songs.length - 1;
-  }
-
-  //loadMap(songs[songIndex]);
-
-  playSong();
+  viewer.stepBackward();
 }
 
 // Next song
 nextSong() {
-  songIndex++;
-
-  if (songIndex > songs.length - 1) {
-    songIndex = 0;
-  }
-
-  //loadSong(songs[songIndex]);
-
-  playSong();
+  viewer.stepForward();
 }
 
 // Update progress bar
