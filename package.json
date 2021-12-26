@@ -6,11 +6,11 @@
   "main": "src/app.js",
   "browser": "src/app.js",
   "scripts": {
-    "build": "browserify -p esmify src/app.js -o build/bundle.js",
+    "build": "browserify -p esmify src/app.js -o build/bundle.js && cpy index.html build/ && cpy style.css build/ && cpy assets build/ --parents && cpy lib build/ --parents ",
     "dev": "budo src/app.js:build/bundle.js --port 3000 -- -p esmify",
     "test": "node scripts/gen_test.js",
     "deploy": "npm run build && now --prod && npm run clean",
-    "clean": "rm bundle.js",
+    "clean": "rm bundle.js rm -Rf build/",
     "postversion": "git push && git push --tags"
   },
   "keywords": [
@@ -29,6 +29,7 @@
   "license": "MIT",
   "dependencies": {
     "browserify": "^16.5.2",
+    "cpy-cli": "^3.1.1",
     "dat.gui": "^0.7.6",
     "filereader-stream": "^2.0.0",
     "glob-to-regexp": "^0.4.1",
