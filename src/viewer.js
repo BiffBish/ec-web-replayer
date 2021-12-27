@@ -265,10 +265,9 @@ module.exports = class Viewer {
         } else {
             currentStep = parseInt(currentStep / 2);    
             this.pause();
-            this.play();         
+            this.play();
+            console.log("stepped forward (current step: " + currentStep + ")");     
         }
-
-        console.log("stepped forward");
     }
 
     play() {
@@ -294,7 +293,7 @@ module.exports = class Viewer {
             currentStep = parseInt(currentStep * 2);             
             this.pause();
             this.play();
-            console.log("stepped backwards");
+            console.log("stepped backwards (current step: " + currentStep + ")");
         }
     }
 
@@ -323,7 +322,11 @@ module.exports = class Viewer {
         // Load
         return new Promise((resolve, reject) => {
             // Unzip the first file as a stream and pass it to lineReader
-            readStream = createReadStream(rootFile, {start: 0 }).pipe(unzip).on('entry', (entry) => {
+            readStream = createReadStream(rootFile, {start: 0 }).pipe(unzip)
+            .on('error', function(e) {
+                console.log("Error: Could not process zip: " + e);
+            })
+            .on('entry', (entry) => {
                 lineReader = readline.createInterface({
                     input: entry
                 });
@@ -344,7 +347,7 @@ module.exports = class Viewer {
         
         if (!isMapLoaded) {
             isMapLoaded = true;
-            console.log("First frame: " + JSON.stringify(currentFrame));
+            //console.log("First frame: " + JSON.stringify(currentFrame));
             totalPlayers = this.countPlayers(currentFrame.teams);
             this.loadMap(EC_MAPS[currentFrame.map_name], timestamp);
             lineReader.pause();

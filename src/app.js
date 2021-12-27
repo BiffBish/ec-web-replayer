@@ -3,6 +3,9 @@ const Viewer = require('./viewer');
 const Playback = require('./playback_controls');
 const SimpleDropzone = require('simple-dropzone');
 const queryString = require('query-string');
+const parsePath = require("parse-path");
+
+const ecRankedApi = "https://ecranked.ddns.net/api/v1/replay/";
 
 if (!(window.File && window.FileReader && window.FileList && window.Blob)) {
     console.error('The File APIs are not fully supported in this browser.');
@@ -27,24 +30,43 @@ class App {
         this.viewerEl = null;
         this.spinnerEl = el.querySelector('.spinner');
         this.dropEl = el.querySelector('.dropzone');
+        this.dropLabel = el.querySelector('.placeholder');
+        this.uploadForm = el.querySelector('.upload-btn');
         this.inputEl = el.querySelector('#file-input');
 
         this.options = {
+            url: hash.url || '',
+            replay: hash.replay || '',
             model: hash.model || '',
             preset: hash.preset || '',
-            cameraPosition: hash.cameraPosition
-                ? hash.cameraPosition.split(',').map(Number)
-                : null,
+            cameraPosition: hash.cameraPosition ? hash.cameraPosition.split(',').map(Number) : null,
             spinner: this.spinnerEl
         };
 
         this.createDropzone();
-        this.hideSpinner();
 
         const options = this.options;
-
+        //console.log("Got options: " + JSON.stringify(options));
         if (options.model) {
             this.view(options.model, '', new Map());
+        } else if (options.replay) {
+            // Hide drop zone + input
+            this.dropLabel.classList.add('hide');
+            this.uploadForm.classList.add('hide');
+            // TODO Use async / await.
+            const myPromise = new Promise((resolve, reject) => {
+              setTimeout(() => {
+                const f = this.loadUrl(options.replay);
+                resolve(f);
+              }, 300);
+            });
+            myPromise.then(file => {
+                this.view(file, '', '');
+            }, error => {
+                this.onError('Could not fetch replay from server!');
+            });
+        } else {
+            this.hideSpinner();
         }
     }
 
@@ -91,6 +113,15 @@ class App {
         }
 
         this.view(rootFile, rootPath, fileMap);
+    }
+
+    async loadUrl(replayUuid) {
+      let response = await fetch(ecRankedApi + replayUuid + "/download");
+      let data = await response.blob();
+      let metadata = {
+        type: 'application/zip'
+      };
+      return new File([data], replayUuid + ".echoreplay", metadata);
     }
 
     /**

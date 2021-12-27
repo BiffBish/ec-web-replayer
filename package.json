@@ -7,7 +7,7 @@
   "browser": "src/app.js",
   "scripts": {
     "build": "browserify -p esmify src/app.js -o build/bundle.js && cpy index.html build/ && cpy style.css build/ && cpy assets build/ --parents && cpy lib build/ --parents ",
-    "dev": "budo src/app.js:build/bundle.js --port 3000 -- -p esmify",
+    "dev": "budo src/app.js:bundle.js --port 3000 -- -p esmify",
     "test": "node scripts/gen_test.js",
     "deploy": "npm run build && now --prod && npm run clean",
     "clean": "rm bundle.js rm -Rf build/",
@@ -34,6 +34,7 @@
     "filereader-stream": "^2.0.0",
     "glob-to-regexp": "^0.4.1",
     "open": "^7.0.0",
+    "parse-path": "^4.0.3",
     "query-string": "^4.3.4",
     "readline-browser": "^0.0.3",
     "serve": "^10.1.2",
