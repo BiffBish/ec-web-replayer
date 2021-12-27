@@ -1,6 +1,8 @@
 # ec-web-replayer
 Three.js streaming viewer app for Echo Combat replay files.
 
+*WARNING: Work in progress---extremely alpha!*
+
 ### Web
 
 ```
