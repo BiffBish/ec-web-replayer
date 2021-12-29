@@ -49,6 +49,7 @@ class App {
         //console.log("Got options: " + JSON.stringify(options));
         if (options.model) {
             this.view(options.model, '', new Map());
+            this.hideSpinner();
         } else if (options.replay) {
             // Hide drop zone + input
             this.dropLabel.classList.add('hide');

@@ -217,7 +217,7 @@ module.exports = class Viewer {
         this.gridHelper = null;
         this.axesHelper = null;
 
-        this.addGUI();
+        //this.addGUI();
 
         this.animate = this.animate.bind(this);
         requestAnimationFrame(this.animate);
@@ -263,7 +263,12 @@ module.exports = class Viewer {
         if (playback.isPaused()) {
             // step backward
         } else {
-            currentStep = parseInt(currentStep / 2);    
+            const nextStep = parseInt(currentStep / 2);
+
+            // Never step to 0
+            if (nextStep > 0) {
+                currentStep = nextStep;
+            }
             this.pause();
             this.play();
             console.log("stepped forward (current step: " + currentStep + ")");     
@@ -399,10 +404,11 @@ module.exports = class Viewer {
              // map.position.set(45,0,20);
 
              
-             
-            this.setContent(map, clips);
             playback.loadSong(ecMap.name, timestamp.split(".")[0]);
             playback.updateProgress(1,1000);
+             
+        this.options.spinner.style.display = 'none';
+            this.setContent(map, clips);
             // This errors out for some reason...
              //resolve(map);
         });
