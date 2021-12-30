@@ -484,7 +484,9 @@ module.exports = class Viewer {
   }
   update(time) {
     if (LoadedFrames.length < targetLoadedFrames) {
-      lineReader.resume();
+      if (lineReader != undefined) {
+        lineReader.resume();
+      }
     }
     playback.updatePercent(
       `Loading: ${((LoadedFrames.length / this.rootInfo.frames) * 100).toFixed(
@@ -738,6 +740,9 @@ module.exports = class Viewer {
       this.spawnPlayers();
       lastTotalPlayers = totalPlayers;
 
+      return;
+    }
+    if (totalPlayers == 0) {
       return;
     }
 
