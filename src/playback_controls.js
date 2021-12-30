@@ -8,7 +8,7 @@ let buffer = null;
 
 let progressContainer = null;
 let title = null;
-
+let percent = null;
 let mouseDown = false;
 
 // Song titles
