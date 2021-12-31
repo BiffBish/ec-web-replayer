@@ -1,7 +1,6 @@
 const WEBGL = require("../lib/WebGL");
 const Viewer = require("./viewer");
 const Playback = require("./playback_controls");
-const SimpleDropzone = require("simple-dropzone");
 const queryString = require("query-string");
 const parsePath = require("parse-path");
 
@@ -30,7 +29,7 @@ class App {
     this.dropLabel = el.querySelector(".placeholder");
     this.uploadForm = el.querySelector(".upload-btn");
     this.inputEl = el.querySelector("#file-input");
-
+    this.exitReplayEl = el.querySelector("#exit-replay");
     this.options = {
       url: hash.url || "",
       replay: hash.replay || "",
@@ -42,17 +41,15 @@ class App {
       spinner: this.spinnerEl,
     };
 
-    this.createDropzone();
-
     const options = this.options;
     //console.log("Got options: " + JSON.stringify(options));
+
     if (options.model) {
       this.view(options.model, "", new Map());
       this.hideSpinner();
     } else if (options.replay) {
-      // Hide drop zone + input
-      this.dropLabel.classList.add("hide");
-      this.uploadForm.classList.add("hide");
+      this.exitReplayEl.href = "https://ecranked.com/replay/" + options.replay;
+
       // TODO Use async / await.
       const myPromise = new Promise((resolve, reject) => {
         setTimeout(() => {
@@ -71,16 +68,6 @@ class App {
     } else {
       this.hideSpinner();
     }
-  }
-
-  /**
-   * Sets up the drag-and-drop controller.
-   */
-  createDropzone() {
-    const dropCtrl = new SimpleDropzone(this.dropEl, this.inputEl);
-    dropCtrl.on("drop", ({ files }) => this.load(files));
-    dropCtrl.on("dropstart");
-    dropCtrl.on("droperror", () => this.hideSpinner());
   }
 
   /**
